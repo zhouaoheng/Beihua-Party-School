@@ -7,4 +7,3 @@ Beihua University Party school education and training system
 机器码绑定  
 联系邮箱 2229279379@qq.com  
 2022-04-23 可用  
-[下载地址](https://github.com/umbrella0216/Beihua-Party-School/releases/tag/1)
