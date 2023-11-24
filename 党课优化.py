@@ -1,7 +1,7 @@
 # coding=gbk
 # @Time : 2021-04-07 22:03
 # @Author : ZAH
-# @File : µ³¿ÎÓÅ»¯.py
+# @File : å…šè¯¾ä¼˜åŒ–.py
 # @Software : PyCharm
 import json
 import time
@@ -16,39 +16,64 @@ import xlrd
 import hashlib
 import base64
 
-
-url = 'http://wldx.beihua.edu.cn/m/Exam/Student/Login#'
-get_url = 'http://wldx.beihua.edu.cn/m/Exam/Student/StudyOnline'
-post_url = 'http://wldx.beihua.edu.cn/m/Exam/Student/SaveStudentRecord'
-my_study_url = 'http://wldx.beihua.edu.cn/m/Exam/Student/MyStudy'
-LoginOut_url = 'http://wldx.beihua.edu.cn/m/Exam/Student/LoginOut'
+url = 'https://wldx.beihua.edu.cn/m/Exam/Student/Login#'
+get_url = 'https://wldx.beihua.edu.cn/m/Exam/Student/StudyOnline'
+post_url = 'https://wldx.beihua.edu.cn/m/Exam/Student/SaveStudentRecord'
+my_study_url = 'https://wldx.beihua.edu.cn/m/Exam/Student/MyStudy'
+LoginOut_url = 'https://wldx.beihua.edu.cn/m/Exam/Student/LoginOut'
+ResetPassword_url = "https://wldx.beihua.edu.cn/m/Exam/Student/ResetPassword"
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                   'Chrome/69.0.3493.3 Safari/537.36 '
 }
 
+
 def md5(pw):
     hl = hashlib.md5()
     hl.update(pw.encode(encoding='utf-8'))
     return hl.hexdigest()
 
+
 def jiami(pw):
     return base64.b64encode(pw.encode('utf-8'))
+
+
+def resetPassword(oldPassword, Password):
+    data = {
+        'oldPassword': jiami(oldPassword),
+        'Password': jiami(Password)
+    }
+    while 1:
+        R = session.post(url=ResetPassword_url, headers=headers, data=data)
+        print("æ­£åœ¨ä¿®æ”¹å¯†ç ")
+        if R.status_code == 200:
+            print("å·²ä¿®æ”¹å¯†ç ä¸º:" + Password)
+            break
+
+
+# è·å–è§†é¢‘ID
+def getVideoID(id):
+    video_url = "https://wldx.beihua.edu.cn/m/Exam/Student/startStudy?chapterID="+id
+    video_text = session.get(url=video_url, headers=headers).text
+    videoInfo = etree.HTML(video_text).xpath("//video/source/@src")[0]
+    video_id = videoInfo.split("/")[-1].split(".")[0]
+    return video_id
+
 
 def study_time():
     while 1:
         R = session.get(url=my_study_url, headers=headers)
         if R.status_code == 200:
             break
-        print("ÕıÔÚÖØÊÔ!\n")
+        print("æ­£åœ¨é‡è¯•!\n")
     my_study_page = R.text
     tree = etree.HTML(my_study_page)
     study = tree.xpath('//div[@class="item-title label text-align-r"]/text()')
-    print('ĞÕÃû:' + study[0] + '\n')
-    print('ĞÔ±ğ:' + study[1] + '\n')
-    print('Ñ§ºÅ:' + study[2] + '\n')
-    print('Ñ§Ï°Ê±¼ä:' + study[3] + '\n')
+    print('å§“å:' + study[0] + '\n')
+    print('æ€§åˆ«:' + study[1] + '\n')
+    print('å­¦å·:' + study[2] + '\n')
+    print('å­¦ä¹ æ—¶é—´:' + study[3] + '\n')
     return study[3]
 
 
@@ -64,11 +89,11 @@ def skip_class():
     ex = "'(.*?)'"
     onclick_list = re.findall(ex, str(onclick_list), re.S)
     num = len(name_list)
-    print('¿Î³ÌÁĞ±í:\n')
+    print('è¯¾ç¨‹åˆ—è¡¨:\n')
     for class_num in range(0, num):
         print(str(class_num) + ':' + name_list[class_num])
-    input_num = int(input("ÇëÊäÈëÒªË¢µÄ¿Î³ÌºÅ:"))
-    # input_num = 0
+    # input_num = int(input("è¯·è¾“å…¥è¦åˆ·çš„è¯¾ç¨‹å·:"))
+    input_num = 0
     onclick = onclick_list[input_num]
     study_url = 'http://wldx.beihua.edu.cn/m/Exam/Student/Course?courseID=' + str(onclick)
     page_text = session.get(url=study_url, headers=headers).text
@@ -77,54 +102,66 @@ def skip_class():
     id_list = re.findall(ex, str(li_list), re.S)
     for id in id_list[::-1]:
         if s_time >= input_time:
-            print('³¬¹ı' + str(input_time) + '·ÖÖÓ£¬Ë¢¿Î½áÊø')
+            print('è¶…è¿‡' + str(input_time) + 'åˆ†é’Ÿï¼Œåˆ·è¯¾ç»“æŸ')
             break
-        print(time.strftime('\n'+'%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
-        print('¿Î³ÌID:' + id)
+        print(time.strftime('\n' + '%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+        print('è¯¾ç¨‹ID:' + id)
         video_time = str(random.randrange(20, 30, 1))
-        print('¿Î³ÌÊ±¼ä:' + video_time)
+        print('è¯¾ç¨‹æ—¶é—´:' + video_time)
         data = {
             'ChapterID': str(id),
+            'VideoID': getVideoID(id),
             'StudyTime': video_time
         }
         session.post(url=post_url, headers=headers, data=data)
         s_time = int(video_time) + s_time
-        print('µ±Ç°×ÜÊ±³¤:' + str(s_time))
-        # 1S ÑÓ³Ù
+        print('å½“å‰æ€»æ—¶é•¿:' + str(s_time))
+        # 1S å»¶è¿Ÿ
         # time.sleep(1)
 
 
 if __name__ == '__main__':
     session = requests.Session()
-    LoginName = input('ÕËºÅ:')
-    password = input('ÃÜÂë:')
-    input_time = int(input("ÇëÊäÈëÒªË¢µÄÊ±³¤:"))
-    while(1):
+    LoginName = input('è´¦å·:').strip()
+    password = input('å¯†ç :').strip()
+
+    # ä¸è¾“å…¥å¯†ç åˆ™ä¸ºé»˜è®¤å¯†ç 
+    if password.strip() is None:
+        password = "@BHdx1234"
+
+    input_time = 1440
+    # input_time = int(input("è¯·è¾“å…¥è¦åˆ·çš„æ—¶é•¿:")).strip()
+
+    while (1):
         login_data = {
             'LoginName': LoginName,
             'password': jiami(password)
         }
-        print(time.strftime('\n'+'%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
-        print('ÕıÔÚ³¢ÊÔµÇÂ¼:' + str(LoginName))
+        print(time.strftime('\n' + '%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+        print('æ­£åœ¨å°è¯•ç™»å½•:' + str(LoginName))
         r = session.post(url=url, headers=headers, data=login_data)
         a = json.loads(r.text)
         if a['Success'] == 0:
-            print("Ñ§ºÅ»òÃÜÂë²»ÕıÈ·£¡")
-            LoginName = input('ÕËºÅ:')
-            password = input('ÃÜÂë:')
+            print("å­¦å·æˆ–å¯†ç ä¸æ­£ç¡®ï¼")
+            LoginName = input('è´¦å·:').strip()
+            password = input('å¯†ç :').strip()
         if a['Success'] == -1:
-            print("µ±Ç°µÇÂ¼ÈËÊı½Ï¶à£¬ÇëÉÔºóµÇÂ¼£¡")
+            print("å½“å‰ç™»å½•äººæ•°è¾ƒå¤šï¼Œè¯·ç¨åç™»å½•ï¼")
         if a['Success'] == 2:
-            print("ÕËºÅ±»Ëø¶¨»òÉ¾³ı£¡")
-            LoginName = input('ÕËºÅ:')
-            password = input('ÃÜÂë:')
+            print("è´¦å·è¢«é”å®šæˆ–åˆ é™¤ï¼")
+            LoginName = input('è´¦å·:').strip()
+            password = input('å¯†ç :').strip()
+        if a['Success'] == 3:
+            resetPassword(password, "Aa123456@")
+            break
         if a['Success'] == 1:
-            print("µÇÂ¼³É¹¦£¡")
-            break;
+            print("ç™»å½•æˆåŠŸï¼")
+            break
+
         time.sleep(2)
 
     skip_class()
-    print('È«²¿Íê³É')
-    #ÍË³öµÇÂ½
+    print('å…¨éƒ¨å®Œæˆ')
+    # é€€å‡ºç™»é™†
     session.post(url=LoginOut_url, headers=headers)
     os.system('pause')
